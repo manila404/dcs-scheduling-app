@@ -23,7 +23,6 @@ const ExportPDFButton = ({ schedules, filterBy }) => {
         grouped[key].push(sched);
       }
 
-      // Flatten grouped for export
       filteredSchedules = Object.entries(grouped).flatMap(([group, items]) => [
         { isGroup: true, groupLabel: group },
         ...items,

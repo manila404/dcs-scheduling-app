@@ -1,4 +1,3 @@
-// src/components/TimeSlotGrid.jsx
 import React, { useState } from "react";
 import { timeToMinutes, allTimeSlots } from "../utils/timeUtils";
 import { FaTrash, FaEdit } from "react-icons/fa";

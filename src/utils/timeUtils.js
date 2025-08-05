@@ -1,8 +1,4 @@
-// src/utils/timeUtils.js
 
-/**
- * Converts a time string (e.g., "07:00 AM", "01:30 PM") into total minutes from midnight.
- */
 export const timeToMinutes = (timeStr) => {
   const [time, period] = timeStr.split(' ');
   let [hours, minutes] = time.split(':').map(Number);
@@ -11,9 +7,7 @@ export const timeToMinutes = (timeStr) => {
   return hours * 60 + minutes;
 };
 
-/**
- * Converts total minutes from midnight back into a formatted time string.
- */
+
 export const minutesToTime = (minutes) => {
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;

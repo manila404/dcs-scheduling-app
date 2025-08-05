@@ -15,7 +15,6 @@ const ExportPDFButton = ({ schedules, filterBy }) => {
     if (filterBy) {
       title = `Schedules by ${filterBy.charAt(0).toUpperCase() + filterBy.slice(1)}`;
 
-      // Group and flatten
       const grouped = {};
       for (const sched of schedules) {
         const key = sched[filterBy] || "Unknown";
@@ -23,7 +22,6 @@ const ExportPDFButton = ({ schedules, filterBy }) => {
         grouped[key].push(sched);
       }
 
-      // Flatten into array: include group label row then its schedules
       filteredSchedules = Object.entries(grouped).flatMap(([group, items]) => [
         { isGroup: true, groupLabel: group },
         ...items,
@@ -79,11 +77,9 @@ const ExportPDFButton = ({ schedules, filterBy }) => {
       },
     });
 
-    // Save PDF locally
     const filename = `schedule_${filterBy || "all"}_${Date.now()}.pdf`;
     doc.save(filename);
 
-    // Save metadata to Firestore
     try {
       await addDoc(collection(db, "exports"), {
         filename,
