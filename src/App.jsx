@@ -3,6 +3,8 @@ import ScheduleForm from "./components/ScheduleForm";
 import TimeSlotGrid from "./components/TimeSlotGrid";
 import SchedulePreviewModal from "./components/SchedulePreviewModal";
 import ExportPDFButton from "./components/ExportPDFButton";
+import { ThemeProvider } from "./components/theme-provider";
+import { ModeToggle } from "./components/mode-toggle"; // Make sure you have this component
 import { Button } from "./components/ui/button";
 import {
   Card,
@@ -61,6 +63,7 @@ const App = () => {
   const [selectedYearLevel, setSelectedYearLevel] = useState("1st Year");
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [previewFilterBy, setPreviewFilterBy] = useState(null);
+  
 
   const schedulesCollection = collection(db, "schedules");
 
@@ -140,270 +143,281 @@ const App = () => {
   }, [schedules]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md shadow-sm">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 md:px-8">
-          <div className="flex items-center justify-between h-20">
-            <div className="flex items-center space-x-4">
-              <img
-                width="50"
-                height="50"
-                src="/cvsu_logo.png"
-                alt="CVSU DCS"
-              />
-              <div>
-                <h1 className="text-xl font-bold text-gray-800">
-                  DCS Faculty Room Scheduling
-                </h1>
-                <p className="text-sm text-gray-500">
-                  Cavite State University - Department of Computer Studies
-                </p>
+    // Wrap your entire app in the ThemeProvider
+    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+      {/* Use semantic 'background' color from shadcn which adapts to the theme */}
+      <div className="min-h-screen bg-background">
+        {/* Use adaptive colors for the navbar */}
+        <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 md:px-8">
+            <div className="flex items-center justify-between h-20">
+              <div className="flex items-center space-x-4">
+                <img
+                  width="50"
+                  height="50"
+                  src="/cvsu_logo.png"
+                  alt="CVSU DCS"
+                />
+                <div>
+                  {/* Use 'foreground' for primary text */}
+                  <h1 className="text-xl font-bold text-foreground">
+                    DCS Faculty Room Scheduling
+                  </h1>
+                  {/* Use 'muted-foreground' for secondary text */}
+                  <p className="text-sm text-muted-foreground">
+                    Cavite State University - Department of Computer Studies
+                  </p>
+                </div>
               </div>
+              {/* Add the ModeToggle button to the navbar */}
+              <ModeToggle />
             </div>
           </div>
-        </div>
-      </nav>
+        </nav>
 
-      <main className="p-4 sm:p-6 md:p-8 grid grid-cols-1 lg:grid-cols-4 gap-8 max-w-screen-2xl mx-auto">
-
-        <div className="lg:col-span-1 space-y-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Schedule Filters</CardTitle>
-              <CardDescription>
-                Select program, semester, and year to view available options.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Program
-                  </label>
-                  <Select
-                    value={selectedProgram}
-                    onValueChange={setSelectedProgram}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.keys(initialSubjects).map((prog) => (
-                        <SelectItem key={prog} value={prog}>
-                          {prog}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Semester
-                  </label>
-                  <Select
-                    value={selectedSemester}
-                    onValueChange={setSelectedSemester}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.keys(initialSubjects[selectedProgram]).map(
-                        (sem) => (
-                          <SelectItem key={sem} value={sem}>
-                            {sem}
-                          </SelectItem>
-                        )
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Year Level
-                  </label>
-                  <Select
-                    value={selectedYearLevel}
-                    onValueChange={setSelectedYearLevel}
-                    disabled={isMidyear}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.keys(initialSections[selectedProgram]).map(
-                        (year) => (
-                          <SelectItem key={year} value={year}>
-                            {year}
-                          </SelectItem>
-                        )
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Recently Added</CardTitle>
-              <CardDescription>The last 5 schedules created.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {recentSchedules.length > 0 ? (
-                <div className="space-y-3">
-                  {recentSchedules.map((sched) => (
-                    <div
-                      key={sched.id}
-                      className="text-sm p-3 border rounded-lg"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-semibold leading-tight">{sched.subject}</p>
-                          <p className="text-xs text-muted-foreground">{sched.faculty}</p>
-                        </div>
-                        <Badge variant="outline">{sched.room}</Badge>
-                      </div>
-                      <div className="text-xs font-medium text-muted-foreground pt-2 mt-2 border-t">
-                        {sched.day}, {sched.startTime} - {sched.endTime}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-center text-muted-foreground py-4">
-                  No schedules have been added yet.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="lg:col-span-3 space-y-8">
-          <Card>
-            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <CardTitle>Time Slots</CardTitle>
+        <main className="p-4 sm:p-6 md:p-8 grid grid-cols-1 lg:grid-cols-4 gap-8 max-w-screen-2xl mx-auto">
+          <div className="lg:col-span-1 space-y-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Schedule Filters</CardTitle>
                 <CardDescription>
-                  Select a day to view the schedule.
+                  Select program, semester, and year to view available options.
                 </CardDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                <ExportPDFButton schedules={schedules} />
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline">Preview</Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => handleOpenPreview(null)}>
-                      All
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleOpenPreview("room")}>
-                      By Room
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => handleOpenPreview("faculty")}
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    {/* Use muted-foreground for labels */}
+                    <label className="block text-sm font-medium mb-1 text-muted-foreground">
+                      Program
+                    </label>
+                    <Select
+                      value={selectedProgram}
+                      onValueChange={setSelectedProgram}
                     >
-                      By Faculty
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => handleOpenPreview("section")}
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.keys(initialSubjects).map((prog) => (
+                          <SelectItem key={prog} value={prog}>
+                            {prog}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-muted-foreground">
+                      Semester
+                    </label>
+                    <Select
+                      value={selectedSemester}
+                      onValueChange={setSelectedSemester}
                     >
-                      By Section
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <Dialog open={isFormOpen} onOpenChange={handleFormOpenChange}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Add Schedule
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>
-                        {editingSchedule
-                          ? "Edit Schedule"
-                          : "Add New Schedule"}
-                      </DialogTitle>
-                    </DialogHeader>
-                    <ScheduleForm
-                      rooms={initialRooms}
-                      days={initialDays}
-                      subjects={filteredSubjects}
-                      sections={filteredSections}
-                      faculty={initialFaculty}
-                      schedules={schedules}
-                      onAddSchedule={addOrUpdateSchedule}
-                      editingSchedule={editingSchedule}
-                      selectedProgram={selectedProgram}
-                      selectedSemester={selectedSemester}
-                      selectedYearLevel={selectedYearLevel}
-                    />
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue={initialRooms[0]}>
-                <TabsList className="flex-wrap h-auto justify-start">
-                  {initialRooms.map((room) => (
-                    <TabsTrigger key={room} value={room}>
-                      {room}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-                <div className="my-4">
-                  <Select value={selectedDay} onValueChange={setSelectedDay}>
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {initialDays.map((day) => (
-                        <SelectItem key={day} value={day}>
-                          {day}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.keys(initialSubjects[selectedProgram]).map(
+                          (sem) => (
+                            <SelectItem key={sem} value={sem}>
+                              {sem}
+                            </SelectItem>
+                          )
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-muted-foreground">
+                      Year Level
+                    </label>
+                    <Select
+                      value={selectedYearLevel}
+                      onValueChange={setSelectedYearLevel}
+                      disabled={isMidyear}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.keys(initialSections[selectedProgram]).map(
+                          (year) => (
+                            <SelectItem key={year} value={year}>
+                              {year}
+                            </SelectItem>
+                          )
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                {initialRooms.map((room) => (
-                  <TabsContent key={room} value={room}>
-                    <TimeSlotGrid
-                      selectedDay={selectedDay}
-                      selectedRoom={room}
-                      schedules={schedules.filter(
-                        (s) => s.room === room && s.day === selectedDay
-                      )}
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                    />
-                  </TabsContent>
-                ))}
-              </Tabs>
-            </CardContent>
-          </Card>
-        </div>
-      </main>
+              </CardContent>
+            </Card>
 
-      <SchedulePreviewModal
-        isOpen={previewModalOpen}
-        onClose={() => setPreviewModalOpen(false)}
-        schedules={filteredForPreview()}
-        filterBy={previewFilterBy}
-        title={
-          previewFilterBy
-            ? `Preview by ${
-                previewFilterBy.charAt(0).toUpperCase() +
-                previewFilterBy.slice(1)
-              }`
-            : "All Schedule Preview"
-        }
-      />
-      <Toaster richColors />
-    </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Recently Added</CardTitle>
+                <CardDescription>The last 5 schedules created.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {recentSchedules.length > 0 ? (
+                  <div className="space-y-3">
+                    {recentSchedules.map((sched) => (
+                      // Add adaptive border color
+                      <div
+                        key={sched.id}
+                        className="text-sm p-3 border rounded-lg"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-semibold leading-tight">{sched.subject}</p>
+                            <p className="text-xs text-muted-foreground">{sched.faculty}</p>
+                          </div>
+                          <Badge variant="outline">{sched.room}</Badge>
+                        </div>
+                        {/* Add adaptive border color for the top border */}
+                        <div className="text-xs font-medium text-muted-foreground pt-2 mt-2 border-t">
+                          {sched.day}, {sched.startTime} - {sched.endTime}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-center text-muted-foreground py-4">
+                    No schedules have been added yet.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="lg:col-span-3 space-y-8">
+            <Card>
+              <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <CardTitle>Time Slots</CardTitle>
+                  <CardDescription>
+                    Select a day to view the schedule.
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <ExportPDFButton schedules={schedules} />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline">Preview</Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem onClick={() => handleOpenPreview(null)}>
+                        All
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleOpenPreview("room")}>
+                        By Room
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleOpenPreview("faculty")}
+                      >
+                        By Faculty
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleOpenPreview("section")}
+                      >
+                        By Section
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <Dialog open={isFormOpen} onOpenChange={handleFormOpenChange}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add Schedule
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>
+                          {editingSchedule
+                            ? "Edit Schedule"
+                            : "Add New Schedule"}
+                        </DialogTitle>
+                      </DialogHeader>
+                      <ScheduleForm
+                        rooms={initialRooms}
+                        days={initialDays}
+                        subjects={filteredSubjects}
+                        sections={filteredSections}
+                        faculty={initialFaculty}
+                        schedules={schedules}
+                        onAddSchedule={addOrUpdateSchedule}
+                        editingSchedule={editingSchedule}
+                        selectedProgram={selectedProgram}
+                        selectedSemester={selectedSemester}
+                        selectedYearLevel={selectedYearLevel}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue={initialRooms[0]}>
+                  <TabsList className="flex-wrap h-auto justify-start">
+                    {initialRooms.map((room) => (
+                      <TabsTrigger key={room} value={room}>
+                        {room}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                  <div className="my-4">
+                    <Select value={selectedDay} onValueChange={setSelectedDay}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {initialDays.map((day) => (
+                          <SelectItem key={day} value={day}>
+                            {day}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {initialRooms.map((room) => (
+                    <TabsContent key={room} value={room}>
+                      <TimeSlotGrid
+                        selectedDay={selectedDay}
+                        selectedRoom={room}
+                        schedules={schedules.filter(
+                          (s) => s.room === room && s.day === selectedDay
+                        )}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                      />
+                    </TabsContent>
+                  ))}
+                </Tabs>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+
+        <SchedulePreviewModal
+          isOpen={previewModalOpen}
+          onClose={() => setPreviewModalOpen(false)}
+          schedules={filteredForPreview()}
+          filterBy={previewFilterBy}
+          title={
+            previewFilterBy
+              ? `Preview by ${
+                  previewFilterBy.charAt(0).toUpperCase() +
+                  previewFilterBy.slice(1)
+                }`
+              : "All Schedule Preview"
+          }
+        />
+        <Toaster richColors />
+      </div>
+    </ThemeProvider>
   );
 };
 
