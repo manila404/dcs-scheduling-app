@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+// Import our new Combobox
+import Combobox from "@/components/ComboBox"; 
 import { timeToMinutes, minutesToTime, allTimeSlots } from '../utils/timeUtils';
 import {
   CalendarDays,
@@ -41,6 +42,7 @@ const ScheduleForm = ({
   const [selectedDay, setSelectedDay] = useState('');
   const [endTime, setEndTime] = useState('');
 
+  // --- Effects (no changes needed here) ---
   useEffect(() => {
     if (message) {
       const timer = setTimeout(() => setMessage(''), 4000);
@@ -80,6 +82,7 @@ const ScheduleForm = ({
     }
   }, [startTime, duration]);
 
+  // --- Conflict Check (no changes needed here) ---
   const checkConflict = useCallback(
     (newSchedule) => {
       const newStartMinutes = timeToMinutes(newSchedule.startTime);
@@ -106,6 +109,7 @@ const ScheduleForm = ({
     [schedules, editingSchedule]
   );
 
+  // --- Handle Submit (no changes needed here) ---
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!subject || !section || !facultyMember || !startTime || !duration || !selectedRoom || !selectedDay) {
@@ -141,10 +145,22 @@ const ScheduleForm = ({
     setMessage(`Schedule has been ${editingSchedule ? 'updated' : 'added'} successfully.`);
   };
 
-  const durationOptions = Array.from({ length: 11 }, (_, i) => 30 * (i + 1));
+  // --- Data Transformation for Combobox ---
+  const toOptions = (arr) => arr.map(item => ({ value: item, label: item }));
+  
+  const dayOptions = toOptions(days);
+  const roomOptions = toOptions(rooms);
+  const subjectOptions = toOptions(subjects);
+  const sectionOptions = toOptions(sections);
+  const facultyOptions = toOptions(faculty);
+  const timeOptions = toOptions(allTimeSlots.slice(0, -1));
+  const durationOptions = Array.from({ length: 11 }, (_, i) => {
+    const min = 30 * (i + 1);
+    return { value: String(min), label: `${min} mins` };
+  });
 
   const FormLabel = ({ icon, children }) => (
-    <Label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+    <Label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
       {icon}
       {children}
     </Label>
@@ -155,77 +171,87 @@ const ScheduleForm = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <FormLabel icon={<CalendarDays className="w-4 h-4 text-muted-foreground"/>}>Day</FormLabel>
-          <Select value={selectedDay} onValueChange={setSelectedDay}>
-            <SelectTrigger><SelectValue placeholder="Select Day" /></SelectTrigger>
-            <SelectContent>
-              {days.map((d) => (<SelectItem key={d} value={d}>{d}</SelectItem>))}
-            </SelectContent>
-          </Select>
+          <Combobox
+            options={dayOptions}
+            value={selectedDay}
+            onSelect={setSelectedDay}
+            placeholder="Select Day"
+            searchPlaceholder="Search day..."
+          />
         </div>
         <div className="space-y-2">
           <FormLabel icon={<Building className="w-4 h-4 text-muted-foreground"/>}>Room</FormLabel>
-          <Select value={selectedRoom} onValueChange={setSelectedRoom}>
-            <SelectTrigger><SelectValue placeholder="Select Room" /></SelectTrigger>
-            <SelectContent>
-              {rooms.map((r) => (<SelectItem key={r} value={r}>{r}</SelectItem>))}
-            </SelectContent>
-          </Select>
+          <Combobox
+            options={roomOptions}
+            value={selectedRoom}
+            onSelect={setSelectedRoom}
+            placeholder="Select Room"
+            searchPlaceholder="Search room..."
+          />
         </div>
       </div>
       
       <div className="space-y-2">
         <FormLabel icon={<BookOpen className="w-4 h-4 text-muted-foreground"/>}>Subject</FormLabel>
-        <Select value={subject} onValueChange={setSubject}>
-          <SelectTrigger><SelectValue placeholder="Select Subject" /></SelectTrigger>
-          <SelectContent>
-            {subjects.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
-          </SelectContent>
-        </Select>
+        <Combobox
+          options={subjectOptions}
+          value={subject}
+          onSelect={setSubject}
+          placeholder="Select Subject"
+          searchPlaceholder="Search subject..."
+          emptyMessage="No subject found."
+        />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <FormLabel icon={<Users className="w-4 h-4 text-muted-foreground"/>}>Section</FormLabel>
-          <Select value={section} onValueChange={setSection}>
-            <SelectTrigger><SelectValue placeholder="Select Section" /></SelectTrigger>
-            <SelectContent>
-              {sections.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
-            </SelectContent>
-          </Select>
+          <Combobox
+            options={sectionOptions}
+            value={section}
+            onSelect={setSection}
+            placeholder="Select Section"
+            searchPlaceholder="Search section..."
+            emptyMessage="No section found."
+          />
         </div>
         <div className="space-y-2">
           <FormLabel icon={<User className="w-4 h-4 text-muted-foreground"/>}>Faculty</FormLabel>
-          <Select value={facultyMember} onValueChange={setFacultyMember}>
-            <SelectTrigger><SelectValue placeholder="Select Faculty" /></SelectTrigger>
-            <SelectContent>
-              {faculty.map((f) => (<SelectItem key={f} value={f}>{f}</SelectItem>))}
-            </SelectContent>
-          </Select>
+          <Combobox
+            options={facultyOptions}
+            value={facultyMember}
+            onSelect={setFacultyMember}
+            placeholder="Select Faculty"
+            searchPlaceholder="Search faculty..."
+            emptyMessage="No faculty found."
+          />
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="space-y-2">
           <FormLabel icon={<Clock className="w-4 h-4 text-muted-foreground"/>}>Start Time</FormLabel>
-          <Select value={startTime} onValueChange={setStartTime}>
-            <SelectTrigger><SelectValue placeholder="Select Time" /></SelectTrigger>
-            <SelectContent>
-              {allTimeSlots.slice(0, -1).map((t) => (<SelectItem key={t} value={t}>{t}</SelectItem>))}
-            </SelectContent>
-          </Select>
+          <Combobox
+            options={timeOptions}
+            value={startTime}
+            onSelect={setStartTime}
+            placeholder="Select Time"
+            searchPlaceholder="Search time..."
+          />
         </div>
         <div className="space-y-2">
           <FormLabel icon={<Timer className="w-4 h-4 text-muted-foreground"/>}>Duration</FormLabel>
-          <Select value={String(duration)} onValueChange={(val) => setDuration(Number(val))}>
-            <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-            <SelectContent>
-              {durationOptions.map((d) => (<SelectItem key={d} value={String(d)}>{`${d} mins`}</SelectItem>))}
-            </SelectContent>
-          </Select>
+          <Combobox
+            options={durationOptions}
+            value={String(duration)}
+            onSelect={(val) => setDuration(Number(val))}
+            placeholder="Select"
+            searchPlaceholder="Search duration..."
+          />
         </div>
         <div className="space-y-2">
           <FormLabel icon={<Hourglass className="w-4 h-4 text-muted-foreground"/>}>End Time</FormLabel>
-          <Input type="text" value={endTime} readOnly className="bg-gray-100 focus:ring-0"/>
+          <Input type="text" value={endTime} readOnly className="bg-muted focus:ring-0"/>
         </div>
       </div>
 
@@ -234,8 +260,8 @@ const ScheduleForm = ({
           <div
             className={`flex items-center gap-3 rounded-lg p-3 text-sm ${
               messageType === 'error'
-                ? 'bg-red-50 text-red-800'
-                : 'bg-green-50 text-green-800'
+                ? 'bg-destructive/10 text-destructive'
+                : 'bg-primary/10 text-primary'
             }`}
           >
             {messageType === 'error' ? <AlertCircle className="h-5 w-5" /> : <CheckCircle className="h-5 w-5" />}

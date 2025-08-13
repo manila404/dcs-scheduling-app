@@ -3,69 +3,65 @@ import ScheduleForm from "./components/ScheduleForm";
 import TimeSlotGrid from "./components/TimeSlotGrid";
 import SchedulePreviewModal from "./components/SchedulePreviewModal";
 import ExportPDFButton from "./components/ExportPDFButton";
+import RoomCombobox from "./components/RoomCombobox"; // Import the new component
 import { ThemeProvider } from "./components/theme-provider";
 import { ModeToggle } from "./components/mode-toggle"; // Make sure you have this component
 import { Button } from "./components/ui/button";
+
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+  Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from "@/components/ui/card";
+
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
+
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+
+// Import the Tabs components
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { Badge } from "@/components/ui/badge";
 import { Toaster } from "@/components/ui/sonner";
+
 import {
-  initialRooms,
-  initialDays,
-  initialSubjects,
-  initialSections,
-  initialFaculty,
+  initialRooms, initialDays, initialSubjects,
 } from "./data/initialData";
+
 import { db } from "../src/firebase";
 import {
-  collection,
-  getDocs,
-  setDoc,
-  doc,
-  deleteDoc,
+  collection, getDocs, setDoc, doc, deleteDoc,
 } from "firebase/firestore";
+
 import { PlusCircle } from "lucide-react";
 
 const App = () => {
   const [schedules, setSchedules] = useState([]);
+  const [faculty, setFaculty] = useState([]);
+  const [sections, setSections] = useState({});
+
   const [editingSchedule, setEditingSchedule] = useState(null);
   const [selectedDay, setSelectedDay] = useState(initialDays[0]);
+  const [selectedRoom, setSelectedRoom] = useState(initialRooms[0]);
   const [isFormOpen, setIsFormOpen] = useState(false);
+
   const [selectedProgram, setSelectedProgram] = useState("IT");
   const [selectedSemester, setSelectedSemester] = useState("1st Semester");
   const [selectedYearLevel, setSelectedYearLevel] = useState("1st Year");
+
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [previewFilterBy, setPreviewFilterBy] = useState(null);
-  
+
 
   const schedulesCollection = collection(db, "schedules");
+  const facultyCollection = collection(db, "faculty");
+  const sectionsCollection = collection(db, "sections");
 
   useEffect(() => {
     const fetchSchedules = async () => {
@@ -73,7 +69,28 @@ const App = () => {
       const data = querySnapshot.docs.map((doc) => doc.data());
       setSchedules(data);
     };
+
+    const fetchFaculty = async () => {
+      const querySnapshot = await getDocs(facultyCollection);
+      const data = querySnapshot.docs.map((doc) => doc.data().name);
+      setFaculty(data);
+    };
+
+    const fetchSections = async () => {
+      const querySnapshot = await getDocs(sectionsCollection);
+      const sectionsData = querySnapshot.docs.map((doc) => doc.data());
+      const transformedSections = sectionsData.reduce((acc, section) => {
+        const { program, yearLevel, sectionNames } = section;
+        if (!acc[program]) acc[program] = {};
+        acc[program][yearLevel] = sectionNames;
+        return acc;
+      }, {});
+      setSections(transformedSections);
+    };
+
     fetchSchedules();
+    fetchFaculty();
+    fetchSections();
   }, []);
 
   const addOrUpdateSchedule = async (newSchedule) => {
@@ -81,7 +98,7 @@ const App = () => {
       const exists = prev.some((s) => s.id === newSchedule.id);
       return exists
         ? prev.map((s) => (s.id === newSchedule.id ? newSchedule : s))
-        : [newSchedule, ...prev]; 
+        : [newSchedule, ...prev];
     });
     setEditingSchedule(null);
     await setDoc(doc(db, "schedules", newSchedule.id.toString()), newSchedule);
@@ -100,21 +117,19 @@ const App = () => {
 
   const handleFormOpenChange = (open) => {
     setIsFormOpen(open);
-    if (!open) {
-      setEditingSchedule(null);
-    }
+    if (!open) setEditingSchedule(null);
   };
 
   const isMidyear = selectedSemester === "Midyear";
   const filteredSubjects = isMidyear
     ? initialSubjects?.[selectedProgram]?.[selectedSemester] || []
     : initialSubjects?.[selectedProgram]?.[selectedSemester]?.[0]?.[
-        selectedYearLevel
-      ] || [];
+    selectedYearLevel
+    ] || [];
 
   const filteredSections = isMidyear
-    ? Object.values(initialSections[selectedProgram]).flat()
-    : initialSections?.[selectedProgram]?.[selectedYearLevel] || [];
+    ? Object.values(sections[selectedProgram] || {}).flat()
+    : sections?.[selectedProgram]?.[selectedYearLevel] || [];
 
   const filteredForPreview = () => {
     if (!previewFilterBy) return schedules;
@@ -136,7 +151,6 @@ const App = () => {
   };
 
   const recentSchedules = useMemo(() => {
-
     return [...schedules]
       .sort((a, b) => b.id - a.id)
       .slice(0, 5);
@@ -242,7 +256,8 @@ const App = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {Object.keys(initialSections[selectedProgram]).map(
+                        {/* Corrected: Use 'sections' state. Added a check for its existence. */}
+                        {sections[selectedProgram] && Object.keys(sections[selectedProgram]).map(
                           (year) => (
                             <SelectItem key={year} value={year}>
                               {year}
@@ -329,7 +344,7 @@ const App = () => {
                   </DropdownMenu>
                   <Dialog open={isFormOpen} onOpenChange={handleFormOpenChange}>
                     <DialogTrigger asChild>
-                      <Button>
+                      <Button className="text-white">
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Add Schedule
                       </Button>
@@ -347,7 +362,8 @@ const App = () => {
                         days={initialDays}
                         subjects={filteredSubjects}
                         sections={filteredSections}
-                        faculty={initialFaculty}
+                        // Corrected: Use the 'faculty' state variable
+                        faculty={faculty}
                         schedules={schedules}
                         onAddSchedule={addOrUpdateSchedule}
                         editingSchedule={editingSchedule}
@@ -360,42 +376,39 @@ const App = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <Tabs defaultValue={initialRooms[0]}>
-                  <TabsList className="flex-wrap h-auto justify-start">
-                    {initialRooms.map((room) => (
-                      <TabsTrigger key={room} value={room}>
-                        {room}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                  <div className="my-4">
-                    <Select value={selectedDay} onValueChange={setSelectedDay}>
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {initialDays.map((day) => (
-                          <SelectItem key={day} value={day}>
-                            {day}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {initialRooms.map((room) => (
-                    <TabsContent key={room} value={room}>
-                      <TimeSlotGrid
-                        selectedDay={selectedDay}
-                        selectedRoom={room}
-                        schedules={schedules.filter(
-                          (s) => s.room === room && s.day === selectedDay
-                        )}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                      />
-                    </TabsContent>
-                  ))}
-                </Tabs>
+                <div className="flex flex-col sm:flex-row gap-4 my-4">
+                  {/* 1. Add your RoomCombobox here */}
+                  <RoomCombobox
+                    rooms={initialRooms}
+                    selectedRoom={selectedRoom}
+                    onSelectRoom={setSelectedRoom}
+                  />
+
+                  {/* This is the existing Day selector */}
+                  <Select value={selectedDay} onValueChange={setSelectedDay}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {initialDays.map((day) => (
+                        <SelectItem key={day} value={day}>
+                          {day}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* 2. Display a single TimeSlotGrid based on state */}
+                <TimeSlotGrid
+                  selectedDay={selectedDay}
+                  selectedRoom={selectedRoom}
+                  schedules={schedules.filter(
+                    (s) => s.room === selectedRoom && s.day === selectedDay
+                  )}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                />
               </CardContent>
             </Card>
           </div>
@@ -408,10 +421,9 @@ const App = () => {
           filterBy={previewFilterBy}
           title={
             previewFilterBy
-              ? `Preview by ${
-                  previewFilterBy.charAt(0).toUpperCase() +
-                  previewFilterBy.slice(1)
-                }`
+              ? `Preview by ${previewFilterBy.charAt(0).toUpperCase() +
+              previewFilterBy.slice(1)
+              }`
               : "All Schedule Preview"
           }
         />

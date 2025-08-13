@@ -92,7 +92,7 @@ const ExportPDFDropdown = ({ schedules }) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="default">
+        <Button variant="default" className="text-white">
           <FileDown className="mr-2 h-4 w-4" />
           Export PDF
         </Button>
