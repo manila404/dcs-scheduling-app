@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-// Import our new Combobox
-import Combobox from "@/components/ComboBox"; 
+
+import Combobox from "@/components/ComboBox";
 import { timeToMinutes, minutesToTime, allTimeSlots } from '../utils/timeUtils';
 import {
   CalendarDays,
@@ -41,8 +41,8 @@ const ScheduleForm = ({
   const [selectedRoom, setSelectedRoom] = useState('');
   const [selectedDay, setSelectedDay] = useState('');
   const [endTime, setEndTime] = useState('');
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
-  // --- Effects (no changes needed here) ---
   useEffect(() => {
     if (message) {
       const timer = setTimeout(() => setMessage(''), 4000);
@@ -59,7 +59,6 @@ const ScheduleForm = ({
       setDuration(editingSchedule.duration);
       setSelectedRoom(editingSchedule.room);
       setSelectedDay(editingSchedule.day);
-      setMessage('');
     } else {
       setSubject('');
       setSection('');
@@ -68,8 +67,9 @@ const ScheduleForm = ({
       setDuration(60);
       setSelectedRoom('');
       setSelectedDay('');
-      setMessage('');
     }
+    setMessage('');
+    setIsSubmitted(false);
   }, [editingSchedule]);
 
   useEffect(() => {
@@ -82,7 +82,6 @@ const ScheduleForm = ({
     }
   }, [startTime, duration]);
 
-  // --- Conflict Check (no changes needed here) ---
   const checkConflict = useCallback(
     (newSchedule) => {
       const newStartMinutes = timeToMinutes(newSchedule.startTime);
@@ -96,11 +95,13 @@ const ScheduleForm = ({
         const hasOverlap = newStartMinutes < existingEnd && newEndMinutes > existingStart;
 
         if (existing.day === newSchedule.day && hasOverlap) {
-          if (existing.room === newSchedule.room)
+          if (newSchedule.room && existing.room === newSchedule.room)
             return `Room Conflict: ${existing.room} is already occupied.`;
+
           if (existing.section === newSchedule.section)
             return `Section Conflict: ${existing.section} has another class.`;
-          if (existing.faculty === newSchedule.faculty)
+
+          if (newSchedule.faculty && existing.faculty === newSchedule.faculty)
             return `Faculty Conflict: ${existing.faculty} has another class.`;
         }
       }
@@ -109,10 +110,11 @@ const ScheduleForm = ({
     [schedules, editingSchedule]
   );
 
-  // --- Handle Submit (no changes needed here) ---
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!subject || !section || !facultyMember || !startTime || !duration || !selectedRoom || !selectedDay) {
+    setIsSubmitted(true);
+
+    if (!subject || !section || !startTime || !duration || !selectedDay) {
       setMessageType('error');
       setMessage('Please fill in all required fields.');
       return;
@@ -143,11 +145,11 @@ const ScheduleForm = ({
     onAddSchedule(newSchedule);
     setMessageType('success');
     setMessage(`Schedule has been ${editingSchedule ? 'updated' : 'added'} successfully.`);
+    setIsSubmitted(false);
   };
 
-  // --- Data Transformation for Combobox ---
   const toOptions = (arr) => arr.map(item => ({ value: item, label: item }));
-  
+
   const dayOptions = toOptions(days);
   const roomOptions = toOptions(rooms);
   const subjectOptions = toOptions(subjects);
@@ -166,12 +168,24 @@ const ScheduleForm = ({
     </Label>
   );
 
+  const getComboboxClass = (fieldValue, isRequired = false) => {
+    if (isRequired && isSubmitted && !fieldValue) {
+      return 'border-destructive focus-visible:ring-destructive';
+    }
+    if (!fieldValue) {
+      return 'text-muted-foreground/60 border-input/60';
+    }
+    return '';
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6 py-4">
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <FormLabel icon={<CalendarDays className="w-4 h-4 text-muted-foreground"/>}>Day</FormLabel>
+          <FormLabel icon={<CalendarDays className="w-4 h-4 text-muted-foreground" />}>Day</FormLabel>
           <Combobox
+            className={getComboboxClass(selectedDay, true)}
             options={dayOptions}
             value={selectedDay}
             onSelect={setSelectedDay}
@@ -180,8 +194,9 @@ const ScheduleForm = ({
           />
         </div>
         <div className="space-y-2">
-          <FormLabel icon={<Building className="w-4 h-4 text-muted-foreground"/>}>Room</FormLabel>
+          <FormLabel icon={<Building className="w-4 h-4 text-muted-foreground" />}>Room</FormLabel>
           <Combobox
+            className={getComboboxClass(selectedRoom)}
             options={roomOptions}
             value={selectedRoom}
             onSelect={setSelectedRoom}
@@ -190,10 +205,11 @@ const ScheduleForm = ({
           />
         </div>
       </div>
-      
+
       <div className="space-y-2">
-        <FormLabel icon={<BookOpen className="w-4 h-4 text-muted-foreground"/>}>Subject</FormLabel>
+        <FormLabel icon={<BookOpen className="w-4 h-4 text-muted-foreground" />}>Subject</FormLabel>
         <Combobox
+          className={getComboboxClass(subject, true)}
           options={subjectOptions}
           value={subject}
           onSelect={setSubject}
@@ -205,8 +221,9 @@ const ScheduleForm = ({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <FormLabel icon={<Users className="w-4 h-4 text-muted-foreground"/>}>Section</FormLabel>
+          <FormLabel icon={<Users className="w-4 h-4 text-muted-foreground" />}>Section</FormLabel>
           <Combobox
+            className={getComboboxClass(section, true)}
             options={sectionOptions}
             value={section}
             onSelect={setSection}
@@ -216,8 +233,9 @@ const ScheduleForm = ({
           />
         </div>
         <div className="space-y-2">
-          <FormLabel icon={<User className="w-4 h-4 text-muted-foreground"/>}>Faculty</FormLabel>
+          <FormLabel icon={<User className="w-4 h-4 text-muted-foreground" />}>Faculty</FormLabel>
           <Combobox
+            className={getComboboxClass(facultyMember)}
             options={facultyOptions}
             value={facultyMember}
             onSelect={setFacultyMember}
@@ -230,8 +248,9 @@ const ScheduleForm = ({
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="space-y-2">
-          <FormLabel icon={<Clock className="w-4 h-4 text-muted-foreground"/>}>Start Time</FormLabel>
+          <FormLabel icon={<Clock className="w-4 h-4 text-muted-foreground" />}>Start Time</FormLabel>
           <Combobox
+            className={getComboboxClass(startTime, true)}
             options={timeOptions}
             value={startTime}
             onSelect={setStartTime}
@@ -240,7 +259,7 @@ const ScheduleForm = ({
           />
         </div>
         <div className="space-y-2">
-          <FormLabel icon={<Timer className="w-4 h-4 text-muted-foreground"/>}>Duration</FormLabel>
+          <FormLabel icon={<Timer className="w-4 h-4 text-muted-foreground" />}>Duration</FormLabel>
           <Combobox
             options={durationOptions}
             value={String(duration)}
@@ -250,26 +269,25 @@ const ScheduleForm = ({
           />
         </div>
         <div className="space-y-2">
-          <FormLabel icon={<Hourglass className="w-4 h-4 text-muted-foreground"/>}>End Time</FormLabel>
-          <Input type="text" value={endTime} readOnly className="bg-muted focus:ring-0"/>
+          <FormLabel icon={<Hourglass className="w-4 h-4 text-muted-foreground" />}>End Time</FormLabel>
+          <Input type="text" value={endTime} readOnly className="bg-muted focus:ring-0" />
         </div>
       </div>
 
       <div className="pt-2 space-y-4">
         {message && (
           <div
-            className={`flex items-center gap-3 rounded-lg p-3 text-sm ${
-              messageType === 'error'
+            className={`flex items-center gap-3 rounded-lg p-3 text-sm ${messageType === 'error'
                 ? 'bg-destructive/10 text-destructive'
-                : 'bg-primary/10 text-primary'
-            }`}
+                : 'bg-green-500/10 text-green-500 dark:text-green-400'
+              }`}
           >
             {messageType === 'error' ? <AlertCircle className="h-5 w-5" /> : <CheckCircle className="h-5 w-5" />}
             <span>{message}</span>
           </div>
         )}
         <div className="flex justify-end">
-          <Button type="submit">
+          <Button type="submit" className="text-white">
             {editingSchedule ? "Update Schedule" : "Add Schedule"}
           </Button>
         </div>

@@ -14,7 +14,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-// Updated color palette with dark mode variants
 const colorPalette = [
   "bg-blue-100 border-blue-500 text-blue-800 dark:bg-blue-950 dark:border-blue-700 dark:text-blue-200",
   "bg-green-100 border-green-500 text-green-800 dark:bg-green-950 dark:border-green-700 dark:text-green-200",
@@ -53,13 +52,10 @@ const TimeSlotGrid = ({
 
   return (
     <>
-      {/* Schedule Grid with adaptive borders */}
       <div className="grid grid-cols-[auto_1fr] border border-border rounded-lg overflow-hidden">
-        {/* Header: Time - Uses adaptive colors */}
         <div className="col-span-1 bg-muted p-2 border-b border-r border-border font-semibold text-muted-foreground text-center sticky left-0 z-10">
           Time
         </div>
-        {/* Header: Schedule Title - Uses adaptive colors */}
         <div className="col-span-1 bg-muted p-2 border-b border-border font-semibold text-muted-foreground text-center">
           Schedule for {selectedRoom} on {selectedDay}
         </div>
@@ -75,22 +71,19 @@ const TimeSlotGrid = ({
 
           return (
             <React.Fragment key={`${selectedDay}-${selectedRoom}-${timeSlot}`}>
-              {/* Time Column Cell - Uses adaptive colors */}
               <div className="p-2 border-r border-b border-border bg-muted/50 text-muted-foreground font-mono text-xs sm:text-sm text-center sticky left-0 z-10">
                 {timeSlot}
               </div>
-              {/* Schedule Cell - Uses adaptive colors */}
               <div
                 className={`p-2 border-b border-border text-xs sm:text-sm flex items-center justify-between min-h-[40px] ${
                   isOccupied
                     ? `${getColorClass(schedule.id)} border-l-4`
-                    : "bg-transparent text-muted-foreground" // Use transparent background and muted text for available slots
+                    : "bg-transparent text-muted-foreground" 
                 }`}
               >
                 {isStartOfSchedule ? (
                   <div className="w-full flex justify-between items-center">
                     <div>
-                      {/* Text colors are now handled by the updated colorPalette */}
                       <p className="font-semibold">
                         {schedule.subject} ({schedule.section})
                       </p>
@@ -100,7 +93,6 @@ const TimeSlotGrid = ({
                       </p>
                     </div>
                     <div className="flex gap-2 ml-4">
-                      {/* Action buttons remain the same, their colors are distinct and work in both modes */}
                       <button
                         data-tooltip-id={`edit-${schedule.id}`}
                         onClick={() => onEdit(schedule)}
@@ -134,7 +126,6 @@ const TimeSlotGrid = ({
         })}
       </div>
 
-      {/* AlertDialog from shadcn/ui is already theme-aware */}
       <AlertDialog
         open={confirmId !== null}
         onOpenChange={() => setConfirmId(null)}

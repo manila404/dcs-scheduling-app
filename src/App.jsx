@@ -3,9 +3,9 @@ import ScheduleForm from "./components/ScheduleForm";
 import TimeSlotGrid from "./components/TimeSlotGrid";
 import SchedulePreviewModal from "./components/SchedulePreviewModal";
 import ExportPDFButton from "./components/ExportPDFButton";
-import RoomCombobox from "./components/RoomCombobox"; // Import the new component
+import RoomCombobox from "./components/RoomCombobox";
 import { ThemeProvider } from "./components/theme-provider";
-import { ModeToggle } from "./components/mode-toggle"; // Make sure you have this component
+import { ModeToggle } from "./components/mode-toggle";
 import { Button } from "./components/ui/button";
 
 import {
@@ -24,7 +24,6 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 
-// Import the Tabs components
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { Badge } from "@/components/ui/badge";
@@ -157,11 +156,8 @@ const App = () => {
   }, [schedules]);
 
   return (
-    // Wrap your entire app in the ThemeProvider
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-      {/* Use semantic 'background' color from shadcn which adapts to the theme */}
       <div className="min-h-screen bg-background">
-        {/* Use adaptive colors for the navbar */}
         <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 md:px-8">
             <div className="flex items-center justify-between h-20">
@@ -173,17 +169,14 @@ const App = () => {
                   alt="CVSU DCS"
                 />
                 <div>
-                  {/* Use 'foreground' for primary text */}
                   <h1 className="text-xl font-bold text-foreground">
                     DCS Faculty Room Scheduling
                   </h1>
-                  {/* Use 'muted-foreground' for secondary text */}
                   <p className="text-sm text-muted-foreground">
                     Cavite State University - Department of Computer Studies
                   </p>
                 </div>
               </div>
-              {/* Add the ModeToggle button to the navbar */}
               <ModeToggle />
             </div>
           </div>
@@ -191,7 +184,7 @@ const App = () => {
 
         <main className="p-4 sm:p-6 md:p-8 grid grid-cols-1 lg:grid-cols-4 gap-8 max-w-screen-2xl mx-auto">
           <div className="lg:col-span-1 space-y-8">
-            <Card>
+            <Card className="shadow-lg">
               <CardHeader>
                 <CardTitle>Schedule Filters</CardTitle>
                 <CardDescription>
@@ -201,7 +194,6 @@ const App = () => {
               <CardContent>
                 <div className="grid grid-cols-1 gap-4">
                   <div>
-                    {/* Use muted-foreground for labels */}
                     <label className="block text-sm font-medium mb-1 text-muted-foreground">
                       Program
                     </label>
@@ -256,7 +248,6 @@ const App = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {/* Corrected: Use 'sections' state. Added a check for its existence. */}
                         {sections[selectedProgram] && Object.keys(sections[selectedProgram]).map(
                           (year) => (
                             <SelectItem key={year} value={year}>
@@ -271,7 +262,7 @@ const App = () => {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="shadow-lg">
               <CardHeader>
                 <CardTitle>Recently Added</CardTitle>
                 <CardDescription>The last 5 schedules created.</CardDescription>
@@ -280,7 +271,6 @@ const App = () => {
                 {recentSchedules.length > 0 ? (
                   <div className="space-y-3">
                     {recentSchedules.map((sched) => (
-                      // Add adaptive border color
                       <div
                         key={sched.id}
                         className="text-sm p-3 border rounded-lg"
@@ -292,7 +282,6 @@ const App = () => {
                           </div>
                           <Badge variant="outline">{sched.room}</Badge>
                         </div>
-                        {/* Add adaptive border color for the top border */}
                         <div className="text-xs font-medium text-muted-foreground pt-2 mt-2 border-t">
                           {sched.day}, {sched.startTime} - {sched.endTime}
                         </div>
@@ -309,7 +298,7 @@ const App = () => {
           </div>
 
           <div className="lg:col-span-3 space-y-8">
-            <Card>
+            <Card className="shadow-lg">
               <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <CardTitle>Time Slots</CardTitle>
@@ -362,7 +351,6 @@ const App = () => {
                         days={initialDays}
                         subjects={filteredSubjects}
                         sections={filteredSections}
-                        // Corrected: Use the 'faculty' state variable
                         faculty={faculty}
                         schedules={schedules}
                         onAddSchedule={addOrUpdateSchedule}
@@ -377,14 +365,12 @@ const App = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col sm:flex-row gap-4 my-4">
-                  {/* 1. Add your RoomCombobox here */}
                   <RoomCombobox
                     rooms={initialRooms}
                     selectedRoom={selectedRoom}
                     onSelectRoom={setSelectedRoom}
                   />
 
-                  {/* This is the existing Day selector */}
                   <Select value={selectedDay} onValueChange={setSelectedDay}>
                     <SelectTrigger className="w-full sm:w-[180px]">
                       <SelectValue />
@@ -399,7 +385,6 @@ const App = () => {
                   </Select>
                 </div>
 
-                {/* 2. Display a single TimeSlotGrid based on state */}
                 <TimeSlotGrid
                   selectedDay={selectedDay}
                   selectedRoom={selectedRoom}
