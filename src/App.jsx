@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import ScheduleForm from "./components/ScheduleForm";
 import TimeSlotGrid from "./components/TimeSlotGrid";
 import SchedulePreviewModal from "./components/SchedulePreviewModal";
-import ExportPDFButton from "./components/ExportPDFButton";
+import ExportMenu from "./components/ExportMenu";
+import ExportFilterModal from "./components/ExportFilterModal";
 import RoomCombobox from "./components/RoomCombobox";
 import { ThemeProvider } from "./components/theme-provider";
 import { ModeToggle } from "./components/mode-toggle";
@@ -24,8 +25,6 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
 import { Badge } from "@/components/ui/badge";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -39,6 +38,35 @@ import {
 } from "firebase/firestore";
 
 import { PlusCircle } from "lucide-react";
+
+// HELPER FUNCTION - Now includes sorting of items within groups
+const groupSchedulesBy = (schedules, key) => {
+  if (!key) return schedules;
+  const grouped = {};
+  for (const sched of schedules) {
+    const groupKey = sched[key] || "Uncategorized";
+    if (!grouped[groupKey]) grouped[groupKey] = [];
+    grouped[groupKey].push(sched);
+  }
+  
+  const dayOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+  const sortedGroupEntries = Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b));
+
+  return sortedGroupEntries.flatMap(([group, items]) => {
+      // Sort the items within each group by day, then by time
+      const sortedItems = items.sort((a, b) => 
+          dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day) || 
+          a.startTime.localeCompare(b.startTime)
+      );
+      
+      return [
+          { id: `group-${group}`, groupLabel: group, isGroup: true },
+          ...sortedItems,
+      ];
+  });
+};
+
 
 const App = () => {
   const [schedules, setSchedules] = useState([]);
@@ -57,6 +85,7 @@ const App = () => {
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [previewFilterBy, setPreviewFilterBy] = useState(null);
 
+  const [exportModalState, setExportModalState] = useState({ isOpen: false, type: null });
 
   const schedulesCollection = collection(db, "schedules");
   const facultyCollection = collection(db, "faculty");
@@ -68,13 +97,11 @@ const App = () => {
       const data = querySnapshot.docs.map((doc) => doc.data());
       setSchedules(data);
     };
-
     const fetchFaculty = async () => {
       const querySnapshot = await getDocs(facultyCollection);
       const data = querySnapshot.docs.map((doc) => doc.data().name);
       setFaculty(data);
     };
-
     const fetchSections = async () => {
       const querySnapshot = await getDocs(sectionsCollection);
       const sectionsData = querySnapshot.docs.map((doc) => doc.data());
@@ -86,7 +113,6 @@ const App = () => {
       }, {});
       setSections(transformedSections);
     };
-
     fetchSchedules();
     fetchFaculty();
     fetchSections();
@@ -113,7 +139,7 @@ const App = () => {
     setSchedules((prev) => prev.filter((s) => s.id !== id));
     await deleteDoc(doc(db, "schedules", id.toString()));
   };
-
+  
   const handleFormOpenChange = (open) => {
     setIsFormOpen(open);
     if (!open) setEditingSchedule(null);
@@ -131,17 +157,8 @@ const App = () => {
     : sections?.[selectedProgram]?.[selectedYearLevel] || [];
 
   const filteredForPreview = () => {
-    if (!previewFilterBy) return schedules;
-    const grouped = {};
-    for (const sched of schedules) {
-      const key = sched[previewFilterBy];
-      if (!grouped[key]) grouped[key] = [];
-      grouped[key].push(sched);
-    }
-    return Object.entries(grouped).flatMap(([group, items]) => [
-      { id: `group-${group}`, groupLabel: group, isGroup: true },
-      ...items,
-    ]);
+    // Use the new helper function
+    return groupSchedulesBy(schedules, previewFilterBy);
   };
 
   const handleOpenPreview = (filter) => {
@@ -154,6 +171,19 @@ const App = () => {
       .sort((a, b) => b.id - a.id)
       .slice(0, 5);
   }, [schedules]);
+
+  const uniqueOccupiedRooms = useMemo(() => [...new Set(schedules.map(s => s.room).filter(Boolean))].sort(), [schedules]);
+  const uniqueOccupiedFaculty = useMemo(() => [...new Set(schedules.map(s => s.faculty).filter(Boolean))].sort(), [schedules]);
+  const uniqueOccupiedSections = useMemo(() => [...new Set(schedules.map(s => s.section).filter(Boolean))].sort(), [schedules]);
+
+  const getExportOptions = () => {
+    switch (exportModalState.type) {
+      case 'room': return uniqueOccupiedRooms;
+      case 'faculty': return uniqueOccupiedFaculty;
+      case 'section': return uniqueOccupiedSections;
+      default: return [];
+    }
+  };
 
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
@@ -307,7 +337,10 @@ const App = () => {
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
-                  <ExportPDFButton schedules={schedules} />
+                  <ExportMenu
+                    schedules={schedules}
+                    onOpenModal={(type) => setExportModalState({ isOpen: true, type })}
+                  />
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline">Preview</Button>
@@ -412,6 +445,17 @@ const App = () => {
               : "All Schedule Preview"
           }
         />
+
+        <ExportFilterModal
+          isOpen={exportModalState.isOpen}
+          onClose={() => setExportModalState({ isOpen: false, type: null })}
+          type={exportModalState.type}
+          options={getExportOptions()}
+          schedules={schedules}
+          // Pass the new grouping function as a prop
+          groupSchedulesBy={groupSchedulesBy}
+        />
+
         <Toaster richColors />
       </div>
     </ThemeProvider>
