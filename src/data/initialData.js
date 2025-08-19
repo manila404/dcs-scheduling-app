@@ -176,27 +176,3 @@ export const initialSubjects = {
 
     }
 };
-
-export const initialSections = {
-    'IT': {
-        '1st Year': ['IT 1A', 'IT 1B'],
-        '2nd Year': ['IT 2A', 'IT 2B'],
-        '3rd Year': ['IT 3A'],
-        '4th Year': ['IT 4A']
-    },
-    'CS': {
-        '1st Year': ['CS 1A', 'CS 1B'],
-        '2nd Year': ['CS 2A'],
-        '3rd Year': ['CS 3A', 'CS 3B'],
-        '4th Year': ['CS 4A']
-    }
-};
-
-
-export const initialFaculty = [
-    'Edan A. Belgica',
-    'Clarissa Rostrollo',
-    'Clarence Salvador',
-    'Alvina Ramallosa',
-    'Alvin Catalo'
-];
