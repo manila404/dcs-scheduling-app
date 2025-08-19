@@ -8,6 +8,7 @@ import RoomCombobox from "./components/RoomCombobox";
 import { ThemeProvider } from "./components/theme-provider";
 import { ModeToggle } from "./components/mode-toggle";
 import { Button } from "./components/ui/button";
+import SpecificPreviewModal from "./components/SpecificPreviewModal";
 
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
@@ -39,7 +40,7 @@ import {
 
 import { PlusCircle } from "lucide-react";
 
-// HELPER FUNCTION - Now includes sorting of items within groups
+// HELPER FUNCTION - This contains the proven logic
 const groupSchedulesBy = (schedules, key) => {
   if (!key) return schedules;
   const grouped = {};
@@ -48,23 +49,11 @@ const groupSchedulesBy = (schedules, key) => {
     if (!grouped[groupKey]) grouped[groupKey] = [];
     grouped[groupKey].push(sched);
   }
-  
-  const dayOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-
   const sortedGroupEntries = Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b));
-
-  return sortedGroupEntries.flatMap(([group, items]) => {
-      // Sort the items within each group by day, then by time
-      const sortedItems = items.sort((a, b) => 
-          dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day) || 
-          a.startTime.localeCompare(b.startTime)
-      );
-      
-      return [
-          { id: `group-${group}`, groupLabel: group, isGroup: true },
-          ...sortedItems,
-      ];
-  });
+  return sortedGroupEntries.flatMap(([group, items]) => [
+      { id: `group-${group}`, groupLabel: group, isGroup: true },
+      ...items,
+    ]);
 };
 
 
@@ -81,9 +70,13 @@ const App = () => {
   const [selectedProgram, setSelectedProgram] = useState("IT");
   const [selectedSemester, setSelectedSemester] = useState("1st Semester");
   const [selectedYearLevel, setSelectedYearLevel] = useState("1st Year");
+  
+  // State for the original LIST preview modal
+  const [listPreviewModalOpen, setListPreviewModalOpen] = useState(false);
+  const [listPreviewFilterBy, setListPreviewFilterBy] = useState(null);
 
-  const [previewModalOpen, setPreviewModalOpen] = useState(false);
-  const [previewFilterBy, setPreviewFilterBy] = useState(null);
+  // State for the NEW TIMETABLE preview modal
+  const [specificPreviewState, setSpecificPreviewState] = useState({ isOpen: false, type: null });
 
   const [exportModalState, setExportModalState] = useState({ isOpen: false, type: null });
 
@@ -156,14 +149,14 @@ const App = () => {
     ? Object.values(sections[selectedProgram] || {}).flat()
     : sections?.[selectedProgram]?.[selectedYearLevel] || [];
 
-  const filteredForPreview = () => {
+  const filteredForListPreview = () => {
     // Use the new helper function
-    return groupSchedulesBy(schedules, previewFilterBy);
+    return groupSchedulesBy(schedules, listPreviewFilterBy);
   };
 
-  const handleOpenPreview = (filter) => {
-    setPreviewFilterBy(filter);
-    setPreviewModalOpen(true);
+  const handleOpenListPreview = (filter) => {
+    setListPreviewFilterBy(filter);
+    setListPreviewModalOpen(true);
   };
 
   const recentSchedules = useMemo(() => {
@@ -176,8 +169,8 @@ const App = () => {
   const uniqueOccupiedFaculty = useMemo(() => [...new Set(schedules.map(s => s.faculty).filter(Boolean))].sort(), [schedules]);
   const uniqueOccupiedSections = useMemo(() => [...new Set(schedules.map(s => s.section).filter(Boolean))].sort(), [schedules]);
 
-  const getExportOptions = () => {
-    switch (exportModalState.type) {
+  const getOptionsForModal = (type) => {
+    switch (type) {
       case 'room': return uniqueOccupiedRooms;
       case 'faculty': return uniqueOccupiedFaculty;
       case 'section': return uniqueOccupiedSections;
@@ -346,21 +339,17 @@ const App = () => {
                       <Button variant="outline">Preview</Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                      <DropdownMenuItem onClick={() => handleOpenPreview(null)}>
-                        All
+                      <DropdownMenuItem onClick={() => handleOpenListPreview(null)}>
+                        All (List View)
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleOpenPreview("room")}>
-                        By Room
+                      <DropdownMenuItem onClick={() => setSpecificPreviewState({ isOpen: true, type: 'room' })}>
+                        By Room (Timetable)...
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleOpenPreview("faculty")}
-                      >
-                        By Faculty
+                      <DropdownMenuItem onClick={() => setSpecificPreviewState({ isOpen: true, type: 'faculty' })}>
+                        By Faculty (Timetable)...
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleOpenPreview("section")}
-                      >
-                        By Section
+                      <DropdownMenuItem onClick={() => setSpecificPreviewState({ isOpen: true, type: 'section' })}>
+                        By Section (Timetable)...
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -433,26 +422,33 @@ const App = () => {
         </main>
 
         <SchedulePreviewModal
-          isOpen={previewModalOpen}
-          onClose={() => setPreviewModalOpen(false)}
-          schedules={filteredForPreview()}
-          filterBy={previewFilterBy}
+          isOpen={listPreviewModalOpen}
+          onClose={() => setListPreviewModalOpen(false)}
+          schedules={filteredForListPreview()}
+          filterBy={listPreviewFilterBy}
           title={
-            previewFilterBy
-              ? `Preview by ${previewFilterBy.charAt(0).toUpperCase() +
-              previewFilterBy.slice(1)
+            listPreviewFilterBy
+              ? `Preview by ${listPreviewFilterBy.charAt(0).toUpperCase() +
+              listPreviewFilterBy.slice(1)
               }`
               : "All Schedule Preview"
           }
+        />
+
+        <SpecificPreviewModal
+          isOpen={specificPreviewState.isOpen}
+          onClose={() => setSpecificPreviewState({ isOpen: false, type: null })}
+          type={specificPreviewState.type}
+          options={getOptionsForModal(specificPreviewState.type)}
+          schedules={schedules}
         />
 
         <ExportFilterModal
           isOpen={exportModalState.isOpen}
           onClose={() => setExportModalState({ isOpen: false, type: null })}
           type={exportModalState.type}
-          options={getExportOptions()}
+          options={getOptionsForModal(exportModalState.type)}
           schedules={schedules}
-          // Pass the new grouping function as a prop
           groupSchedulesBy={groupSchedulesBy}
         />
 
