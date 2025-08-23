@@ -68,14 +68,12 @@ const App = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   const [selectedProgram, setSelectedProgram] = useState("CS");
-  const [selectedSemester, setSelectedSemester] = useState("1st Semester");
+  const [selectedSemester, setSelectedSemester] = useState("2nd Semester");
   const [selectedYearLevel, setSelectedYearLevel] = useState("1st Year");
   
-  // State for the original LIST preview modal
   const [listPreviewModalOpen, setListPreviewModalOpen] = useState(false);
   const [listPreviewFilterBy, setListPreviewFilterBy] = useState(null);
 
-  // State for the NEW TIMETABLE preview modal
   const [specificPreviewState, setSpecificPreviewState] = useState({ isOpen: false, type: null });
 
   const [exportModalState, setExportModalState] = useState({ isOpen: false, type: null });
@@ -150,7 +148,6 @@ const App = () => {
     : sections?.[selectedProgram]?.[selectedYearLevel] || [];
 
   const filteredForListPreview = () => {
-    // Use the new helper function
     return groupSchedulesBy(schedules, listPreviewFilterBy);
   };
 
@@ -435,12 +432,15 @@ const App = () => {
           }
         />
 
+        {/* --- ADD THE ONDELETE PROP HERE --- */}
         <SpecificPreviewModal
           isOpen={specificPreviewState.isOpen}
           onClose={() => setSpecificPreviewState({ isOpen: false, type: null })}
           type={specificPreviewState.type}
           options={getOptionsForModal(specificPreviewState.type)}
           schedules={schedules}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
         />
 
         <ExportFilterModal

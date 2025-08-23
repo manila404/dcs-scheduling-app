@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import Combobox from "@/components/ComboBox";
 import TimetablePreview from "./TimetablePreview";
 
-const SpecificPreviewModal = ({ isOpen, onClose, type, options, schedules }) => {
+const SpecificPreviewModal = ({ isOpen, onClose, type, options, schedules, onEdit, onDelete }) => {
   const [selectedValue, setSelectedValue] = useState("");
 
   const filteredSchedules = useMemo(() => {
@@ -19,10 +19,25 @@ const SpecificPreviewModal = ({ isOpen, onClose, type, options, schedules }) => 
     return schedules.filter(s => s[type] === selectedValue);
   }, [selectedValue, type, schedules]);
 
+  // Handler for editing: calls parent function and closes modal
+  const handleEdit = (schedule) => {
+    if (onEdit) {
+      onEdit(schedule);
+    }
+    onClose();
+  };
+
+  // Handler for deleting: just calls the parent function
+  const handleDelete = (scheduleId) => {
+    if (onDelete) {
+      onDelete(scheduleId);
+    }
+    // Note: We don't close the modal here, allowing the user to delete multiple items
+  };
+
   const comboboxOptions = options.map(opt => ({ value: opt, label: opt }));
 
-  // Reset selected value when the modal is reopened with a different type
-  React.useEffect(() => {
+  useEffect(() => {
     if (isOpen) {
       setSelectedValue("");
     }
@@ -38,7 +53,7 @@ const SpecificPreviewModal = ({ isOpen, onClose, type, options, schedules }) => 
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-4 gap-4 py-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 py-4">
           <div className="col-span-1">
             <Combobox
               options={comboboxOptions}
@@ -51,9 +66,14 @@ const SpecificPreviewModal = ({ isOpen, onClose, type, options, schedules }) => 
           </div>
         </div>
 
-        <div className="flex-grow">
+        <div className="flex-grow min-h-0">
           {selectedValue ? (
-            <TimetablePreview schedules={filteredSchedules} />
+            // Pass both edit and delete handlers to the TimetablePreview
+            <TimetablePreview 
+              schedules={filteredSchedules} 
+              onEdit={onEdit ? handleEdit : null} 
+              onDelete={onDelete ? handleDelete : null}
+            />
           ) : (
             <div className="flex items-center justify-center h-full text-muted-foreground border rounded-lg bg-muted/30">
               Please select a {type} to see the preview.
