@@ -67,7 +67,7 @@ const App = () => {
   const [selectedRoom, setSelectedRoom] = useState(initialRooms[0]);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
-  const [selectedProgram, setSelectedProgram] = useState("IT");
+  const [selectedProgram, setSelectedProgram] = useState("CS");
   const [selectedSemester, setSelectedSemester] = useState("1st Semester");
   const [selectedYearLevel, setSelectedYearLevel] = useState("1st Year");
   

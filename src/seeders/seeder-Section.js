@@ -1,17 +1,11 @@
 import { db } from '../firebaseAdmin.js';
 
 const initialSections = {
-    'IT': {
-        '1st Year': ['IT 1A', 'IT 1B'],
-        '2nd Year': ['IT 2A', 'IT 2B'],
-        '3rd Year': ['IT 3A'],
-        '4th Year': ['IT 4A']
-    },
     'CS': {
-        '1st Year': ['CS 1A', 'CS 1B'],
-        '2nd Year': ['CS 2A'],
-        '3rd Year': ['CS 3A', 'CS 3B'],
-        '4th Year': ['CS 4A']
+        '1st Year': ['CS 1-1', 'CS 1-2', 'CS 1-3', 'CS 1-4', 'CS 1-5'],
+        '2nd Year': ['CS 2-1', 'CS 2-2', 'CS 2-3', 'CS 2-4', 'CS 2-5'],
+        '3rd Year': ['CS 3-1', 'CS 3-2', 'CS 3-3', 'CS 3-4', 'CS 3-5', 'CS 3-6'],
+        '4th Year': ['CS 4-1', 'CS 4-2', 'CS 4-3']
     }
 };
 
